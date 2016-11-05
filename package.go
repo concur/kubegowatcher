@@ -229,7 +229,6 @@ func (c *Client) watchForPods(timeout int64) {
   for {
     event, ok := <-events
     log.Printf("Pod Event %v: %+v", event.Type, event.Object)
-    log.Printf("Pod Event Type %v", event.Type)
     if event.Type == "ADDED" {
       //newPod(event.Object)
     } else if event.Type == "DELETED" {
