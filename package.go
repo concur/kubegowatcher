@@ -3,7 +3,6 @@ package main
 import (
   "time"
   "log"
-  "flag"
   api "k8s.io/client-go/pkg/api/v1"
   "encoding/json"
   "k8s.io/client-go/kubernetes"
@@ -20,12 +19,10 @@ type Client struct {
 func (c *Client) newService(obj interface{}) {
   
   var s = api.Service{}
-  
   b, err := json.Marshal(obj)
-  log.Printf("Object: %+v", s)
   
   if err = json.Unmarshal(b, &s); err == nil {
-    
+  log.Printf("New Service: %+v", s)    
 // potentially useful if you delay or check for existing ExternalIPs
 //    //check delay since event occurred
 //    var k8sTimeFmt = "2006-01-02 15:04:05 -0700 MST"
@@ -60,49 +57,71 @@ func (c *Client) newService(obj interface{}) {
 func newNode(obj interface{}) {
 
   var s = api.Node{}
-  
   b, err := json.Marshal(obj)
-  log.Printf("Object: %+v", s)
   
   if err = json.Unmarshal(b, &s); err == nil {
+    log.Printf("Node Added: %+v", s)
     //skip this node if it's not scheduleable
     if s.Spec.Unschedulable {return}
-    // add code here to handle new Nodes
+    // add code here to handle new nodes
     // s.ObjectMeta.Name
   }
 }
 
 func removeNode(obj interface{}) {
+
   var s = api.Node{}
-  
   b, err := json.Marshal(obj)
-  log.Printf("Object: %+v", s)
   
   if err = json.Unmarshal(b, &s); err == nil {
-    //add code here to handle remove node event
+    log.Printf("Node Removed: %+v", s)
+    //add code here to handle removed nodes
+    //s.ObjectMeta.Name
+  }
+}
+
+func newPod(obj interface{}) {
+
+  var s = api.Pod{}
+  b, err := json.Marshal(obj)
+  
+  if err = json.Unmarshal(b, &s); err == nil {
+    log.Printf("Pod Added: %+v", s)
+    // add code here to handle new nodes
+    // s.ObjectMeta.Name
+  }
+}
+
+func removePod(obj interface{}) {
+
+  var s = api.Pod{}
+  b, err := json.Marshal(obj)
+  
+  if err = json.Unmarshal(b, &s); err == nil {
+    log.Printf("Pod Removed: %+v", s)
+    //add code here to handle removed nodes
     //s.ObjectMeta.Name
   }
 }
 
 func removeService(obj interface{}) {
+
   var s = api.Service{}
-  
   b, err := json.Marshal(obj)
-  err = json.Unmarshal(b, &s)
   
   if err = json.Unmarshal(b, &s); err == nil {
+    log.Printf("Service Removed: %+v", s)
     //add business logic here for service removed
-    log.Printf("Object: %+v", s)
   }
 }
 
 func updateService(obj interface{}) {
-  var sNew = api.Service{}
-  
+
+  var s = api.Service{}
   b, err := json.Marshal(obj)
   
-  if err = json.Unmarshal(b, &sNew); err == nil {
-    log.Printf("Object: %+v", sNew)
+  if err = json.Unmarshal(b, &s); err == nil {
+    log.Printf("Service Updated: %+v", s)
   }
   
   //add business logic here for service updated
@@ -115,14 +134,12 @@ func updateService(obj interface{}) {
 }
 
 
-
 func newKubeClient() (*kubernetes.Clientset, error) {
-    config, err := rest.InClusterConfig()
-    if err != nil {
-        panic(err.Error())
-    }	
-    log.Printf("Using %s for kubernetes master", config.Host)
-    log.Printf("Using kubernetes API %v", config.GroupVersion)
+  config, err := rest.InClusterConfig()
+  if err != nil {
+      panic(err.Error())
+  }	
+  log.Printf("Using %s for kubernetes master", config.Host)
   
   if config.Host == "https://172.16.123.1:8001" {
     config.Host = "http://172.16.123.1:8001"
@@ -137,7 +154,6 @@ func newKubeClient() (*kubernetes.Clientset, error) {
 }
 
 func (c *Client) watchForServices(timeout int64) error {
-  //timeout := int64(30)
   watchServicesInterface, err := c.kubeClient.Core().Services("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for services: %+v", err)
@@ -148,7 +164,6 @@ func (c *Client) watchForServices(timeout int64) error {
   for {
     event, ok := <-events
     log.Printf("Service Event %v: %+v", event.Type, event.Object)
-    log.Printf("Service Event Type %v", event.Type)
     if event.Type == "ADDED" {
       c.newService(event.Object)
     } else if event.Type == "MODIFIED" {
@@ -176,7 +191,7 @@ func (c *Client) watchForNodes(timeout int64) {
   events := watchNodesInterface.ResultChan()
   for {
     event, ok := <-events
-    log.Printf("Node Event %v: %+v", event.Type, event.Object)
+//    log.Printf("Node Event %v: %+v", event.Type, event.Object)
     log.Printf("Node Event Type %v", event.Type)
     if event.Type == "ADDED" {
       newNode(event.Object)
@@ -187,18 +202,36 @@ func (c *Client) watchForNodes(timeout int64) {
     }
     if !ok { break }
   }
+  return
+}
+
+func (c *Client) watchForPods(timeout int64) {
+  watchInterface, err := c.kubeClient.Core().Pods("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+  if err != nil {
+    log.Printf("Error retrieving watch interface for pods: %+v", err)
+    panic(err.Error())    
+  }
+  
+  events := watchInterface.ResultChan()
+  for {
+    event, ok := <-events
+    log.Printf("Pod Event %v: %+v", event.Type, event.Object)
+    log.Printf("Pod Event Type %v", event.Type)
+    if event.Type == "ADDED" {
+      //newPod(event.Object)
+    } else if event.Type == "DELETED" {
+      //removePod(event.Object)
+    } else if event.Type == "" {
+      log.Printf("Pod watch timed out: %v seconds", timeout)
+    }
+    if !ok { break }
+  }
   
   return
 }
 
-
 func main() {
   
-  flag.Set("v", "5")
-  flag.Set("logtostderr", "true")
-  flag.Parse()
-  
-  var err error
   watchTimeout := int64(1800) //30 minute resync
   
   k8sClient, err := newKubeClient()
@@ -214,6 +247,7 @@ func main() {
   for {
     go c.watchForNodes(watchTimeout)
     go c.watchForServices(watchTimeout)
+    go c.watchForPods(watchTimeout)
     time.Sleep(time.Second * time.Duration(watchTimeout) + time.Second * 2)
     log.Printf("Restarting watchers from %v second timeout.", watchTimeout + 2)
   }
