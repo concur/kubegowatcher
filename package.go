@@ -10,7 +10,7 @@ import (
   "k8s.io/client-go/rest"
 )
 
-// Client holds state.
+// Client can be used to hold state for business logic as needed.
 type Client struct {
   //kubeClient to use inside functions
   kubeClient *kubernetes.Clientset
@@ -136,9 +136,9 @@ func newKubeClient() (*kubernetes.Clientset, error) {
     return clientset, err
 }
 
-func (c *Client) watchForServices(kubeClient *kubernetes.Clientset, timeout int64) error {
+func (c *Client) watchForServices(timeout int64) error {
   //timeout := int64(30)
-  watchServicesInterface, err := kubeClient.Core().Services("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+  watchServicesInterface, err := c.kubeClient.Core().Services("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for services: %+v", err)
     panic(err.Error())    
@@ -166,9 +166,8 @@ func (c *Client) watchForServices(kubeClient *kubernetes.Clientset, timeout int6
   return err
 }
 
-func watchForNodes(kubeClient *kubernetes.Clientset, timeout int64) {
-  
-  watchNodesInterface, err := kubeClient.Core().Nodes().Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+func (c *Client) watchForNodes(timeout int64) {
+  watchNodesInterface, err := c.kubeClient.Core().Nodes().Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for nodes: %+v", err)
     panic(err.Error())    
@@ -200,21 +199,21 @@ func main() {
   flag.Parse()
   
   var err error
-  var c = Client{}
   watchTimeout := int64(1800) //30 minute resync
   
-  kubeClient, err := newKubeClient()
+  k8sClient, err := newKubeClient()
   if err != nil {
     log.Printf("Failed to create a kubernetes client: %+v", err)
   } else {
     log.Printf("k8s client created.")
   }
   
-  c.kubeClient = kubeClient
-
+  //add the client
+  c := Client{kubeClient: k8sClient}
+  
   for {
-    go watchForNodes(kubeClient, watchTimeout)
-    go c.watchForServices(kubeClient, watchTimeout)
+    go c.watchForNodes(watchTimeout)
+    go c.watchForServices(watchTimeout)
     time.Sleep(time.Second * time.Duration(watchTimeout) + time.Second * 2)
     log.Printf("Restarting watchers from %v second timeout.", watchTimeout + 2)
   }
