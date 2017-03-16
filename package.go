@@ -17,7 +17,7 @@ import (
   "time"
   "log"
   api "k8s.io/client-go/pkg/api/v1"
-  "k8s.io/apimachinery/pkg/apis/meta/v1"
+  //"k8s.io/apimachinery/pkg/apis/meta/v1"
   "encoding/json"
   "k8s.io/client-go/kubernetes"
   "k8s.io/client-go/rest"
@@ -167,7 +167,7 @@ func newKubeClient() (*kubernetes.Clientset, error) {
 }
 
 func (c *Client) watchForServices(timeout int64) error {
-  watchServicesInterface, err := c.kubeClient.Core().Services("").Watch(v1.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+  watchServicesInterface, err := c.kubeClient.Core().Services("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for services: %+v", err)
     panic(err.Error())    
@@ -195,7 +195,7 @@ func (c *Client) watchForServices(timeout int64) error {
 }
 
 func (c *Client) watchForNodes(timeout int64) {
-  watchNodesInterface, err := c.kubeClient.Core().Nodes().Watch(v1.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+  watchNodesInterface, err := c.kubeClient.Core().Nodes().Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for nodes: %+v", err)
     panic(err.Error())    
@@ -219,7 +219,7 @@ func (c *Client) watchForNodes(timeout int64) {
 }
 
 func (c *Client) watchForPods(timeout int64) {
-  watchInterface, err := c.kubeClient.Core().Pods("").Watch(v1.ListOptions{Watch: true, TimeoutSeconds: &timeout})
+  watchInterface, err := c.kubeClient.Core().Pods("").Watch(api.ListOptions{Watch: true, TimeoutSeconds: &timeout})
   if err != nil {
     log.Printf("Error retrieving watch interface for pods: %+v", err)
     panic(err.Error())    

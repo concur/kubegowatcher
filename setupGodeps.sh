@@ -26,6 +26,7 @@ echo $GOPATH
 
 export GOBIN=$HOME/.go_workspace/bin
 echo GOBIN=$GOBIN
-go get ./package.go
+go get -u github.com/golang/dep/...
+dep ensure -update
 
 export PATH=$PATH:$GOPATH/bin

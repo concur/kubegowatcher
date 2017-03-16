@@ -1,0 +1,10 @@
+{
+    "dependencies": {
+        "github.com/golang/glog": {
+            "revision": "44145f04b68cf362d9c4df2182967c2275eaefed"
+        },
+        "k8s.io/client-go": {
+            "branch": "release-2.0"
+        }
+    }
+}
