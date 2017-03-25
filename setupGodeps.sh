@@ -23,10 +23,7 @@
 #sudo mv go /usr/local
 
 echo $GOPATH
+export PATH=$PATH:$GOPATH/bin
 
-export GOBIN=$HOME/.go_workspace/bin
-echo GOBIN=$GOBIN
 go get -u github.com/golang/dep/...
 dep ensure -update
-
-export PATH=$PATH:$GOPATH/bin

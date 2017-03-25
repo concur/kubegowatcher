@@ -17,6 +17,7 @@
 set -e
 
 ./setupGodeps.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #create an alias for the loopback interface so it's reachable inside the docker vm
 if ifconfig | grep -q 172.16.123.1

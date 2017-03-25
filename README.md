@@ -9,8 +9,9 @@ When this plugin is running on a kubernetes cluster it connects to the kubernete
 # Development
 ## Prerequisites
 * OSX
+* golang & a valid $GOPATH - https://golang.org/doc/install
 * Docker Native for mac - https://docs.docker.com/docker-for-mac/
-* minikube - https://github.com/kubernetes/minikube/releases/
+* minikube - https://github.com/kubernetes/minikube/releases/ (requires kubectl & virtualbox)
 * Add $DIR/serviceaccount to the list of file shares in docker -> preferences -> file shares
 
 ## Workflow
