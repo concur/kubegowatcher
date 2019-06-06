@@ -1,3 +1,5 @@
+# Archived, deprecated, no longer maintained
+
 # kubegowatcher
 Kubernetes plugin template that watches for changes to services, pods & nodes. Business logic can then be added for ADDED, MODIFIED or DELETED events.
 
